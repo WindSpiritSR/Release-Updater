@@ -19,7 +19,8 @@ API_HEADERS = {'Accept': 'application/vnd.github.v3+json'}
 API_PATH_LATEST_RELEASE = 'releases/latest'
 REQUESTS_RETRIES = 20
 PROXIES = {}
-
+AUTH_USER = ''
+AUTH_TOKEN = ''
 
 s = requests.Session()
 s.mount('http://', HTTPAdapter(max_retries=REQUESTS_RETRIES))
@@ -27,14 +28,12 @@ s.mount('https://', HTTPAdapter(max_retries=REQUESTS_RETRIES))
 
 schema = {
     'type': 'object',
-    'required': ['repos', 'proxy'],
+    'required': ['repos', 'proxy', 'auth', 'release_path'],
     'properties': {
         'repos': {
             'type': 'array',
             'items': {
-                'required': ['owner',
-                             'repo',
-                             'local_release'],
+                'required': ['owner', 'repo', 'local_release'],
                 'properties': {
                     'owner': {
                         'type': 'string'
@@ -50,9 +49,7 @@ schema = {
         },
         'proxy': {
             'type': 'object',
-            'required': ['enable',
-                         'http',
-                         'https'],
+            'required': ['enable', 'http', 'https'],
             'properties': {
                 'enable': {
                     'type': 'boolean'
@@ -61,6 +58,18 @@ schema = {
                     'type': 'string'
                 },
                 'https': {
+                    'type': 'string'
+                }
+            }
+        },
+        'auth': {
+            'type': 'object',
+            'required': ['user', 'access_token'],
+            'properties': {
+                'user': {
+                    'type': 'string'
+                },
+                'access_token': {
                     'type': 'string'
                 }
             }
@@ -109,6 +118,9 @@ def init(config):
     
     if config['release_path'] != '':
         RELEASE_PATH = config['release_path']
+    
+    AUTH_USER = config['auth']['user']
+    AUTH_TOKEN = config['auth']['access_token']
 
 
 def read_config():
@@ -126,7 +138,7 @@ def get_latest_release_json(repo_owner, repo_name):
                         repo_name, API_PATH_LATEST_RELEASE]
     request_url = '/'.join(request_url_list)
 
-    req = s.get(request_url, headers=API_HEADERS, proxies=PROXIES)
+    req = s.get(request_url, headers=API_HEADERS, proxies=PROXIES, auth=(AUTH_USER, AUTH_TOKEN))
     if req.status_code == 200:
         return req.json()
     else:
@@ -188,7 +200,7 @@ def check_release_update(config, release_list):
         if 'err_code' in release_latest:
             print_status('Request result code: [' + str(release_latest['err_code']) + ']')
         else:
-            release_latest_time = release_latest['created_at']
+            release_latest_time = release_latest['published_at']
             print_status('Local: [' + release['local_release'] + ']')
             print_status('Repo: [' + release_latest_time + ']')
             if release_latest_time != release['local_release']:
