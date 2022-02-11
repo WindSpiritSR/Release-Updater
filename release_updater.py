@@ -104,7 +104,7 @@ def check_local_dir(local_dir):
         os.mkdir(local_dir)
 
 def init(config):
-    global PROXIES, RELEASE_PATH
+    global PROXIES, RELEASE_PATH, AUTH_USER, AUTH_TOKEN
     try:
         validate(instance=config, schema=schema)
     except jsonschema.exceptions.ValidationError as err:
@@ -115,10 +115,10 @@ def init(config):
             'http': config['proxy']['http'],
             'https': config['proxy']['https'],
         }
-    
+
     if config['release_path'] != '':
         RELEASE_PATH = config['release_path']
-    
+
     AUTH_USER = config['auth']['user']
     AUTH_TOKEN = config['auth']['access_token']
 
@@ -133,7 +133,7 @@ def read_config():
 
 
 def get_latest_release_json(repo_owner, repo_name):
-    global API_GITHUB, API_PATH_LATEST_RELEASE, API_HEADERS, PROXIES
+    global API_GITHUB, API_PATH_LATEST_RELEASE, API_HEADERS, PROXIES, AUTH_USER, AUTH_TOKEN
     request_url_list = [API_GITHUB, repo_owner,
                         repo_name, API_PATH_LATEST_RELEASE]
     request_url = '/'.join(request_url_list)
